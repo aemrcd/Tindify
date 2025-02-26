@@ -34,13 +34,64 @@ def get_token():
     token = json_result["access_token"]
     return token
 
-
 # Test the get_token function
+# token = get_token()
+# print(token)
+
+# Function to get authorization header
+def get_auth_header(token):
+    return {"Authorization": "Bearer " + token}
+
+
+
+#FUNCTION TO SEARCH FOR AN ARTIST
+
+def search_artist(token, artist_name):
+    url = "https://api.spotify.com/v1/search"
+    headers = get_auth_header(token)
+    query = f"?q={artist_name}&type=artist&limit=1"
+
+    query_url = url + query
+    result = get(query_url, headers=headers)
+    json_result = json.loads(result.content)["artists"]["items"]   
+
+    if len(json_result) == 0:
+        print("No artist found")
+        return None
+    
+    return json_result[0]
+
+def get_songs_by_artist(token, artist_id):
+    url = f"https://api.spotify.com/v1/artists/{artist_id}/top-tracks?country=US"
+    headers = get_auth_header(token)
+    result = get(url, headers=headers)
+    json_result = json.loads(result.content)["tracks"]
+
+    return json_result
+
 token = get_token()
-print(token)
+result = search_artist(token, "Ariana Grande")
+artist_id = result["id"]
+songs = get_songs_by_artist(token, artist_id)
+    
+# To get the list of the artist's songs
+
+for idx, songs in enumerate(songs):
+    print(f"{idx + 1}. {songs['name']}")
+else:
+    print("Artist not found")
 
 
-# Serve the index.html file from the templates folder
+def get_artist_Image(token, artist_id):
+    url = f"https://api.spotify.com/v1/artists/{artist_id}/images?country=US?limit=1"
+    headers = get_auth_header(token)
+    result = get(url, headers=headers)
+    json_result = json.loads(result.content)
+    return json_result["images"][0]["url"]
+
+
+
+
 @app.route('/')
 def Home():
     return render_template('index.html')
