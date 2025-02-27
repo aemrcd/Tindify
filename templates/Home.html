@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    
+<div class="parent">
+    <div class="div1">
+        <nav class="navbar">
+            <ul>
+                <li><a href="/Home">Home</a></li>
+                <li><a href="#">Playlist</a></li>
+                <li><a href="#">About</a></li>
+            </ul>
+        </nav>
+    </div>
+
+
+
+
+    <div class="div3">
+        <div class="spotifyplaylist">
+            <iframe style="border-radius:14px" src="https://open.spotify.com/embed/playlist/0OIvJMRHhbbLxHW8nEkVZk?utm_source=generator" width="80%" height="560" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" ></iframe>
+        </div>
+
+    </div>
+
+
+
+    <div class="div4">
+        <div class="Artistimage">
+                <h2>Artist Image for "{{ artist_name }}"</h2>
+        
+                    {% if image_url %}
+                        <img src="{{ image_url }}" alt="Artist Image" style="width:300px;">
+                    {% else %}
+                        <p>No image found for this artist.</p>
+                    {% endif %}
+        </div>
+    </div>
+    <div class="div5">5</div>
+</div>
+    
+<script src="/static/app.js"></script>
+</body>
+</html>

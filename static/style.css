@@ -152,3 +152,52 @@ button:hover {
         transform: translateX(-150%) rotate(-20deg);
     }
 }
+
+/* HOME PAGE */
+
+.parent {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+    gap: 8px;
+    width: 100%;
+    height: 100%;
+    padding: 20px; /* Adjust the padding as needed */
+    box-sizing: border-box; /* Include padding in the element's total width and height */
+}
+
+.parent div {
+    border: 1px solid black; /* You can customize the border color and style */
+}
+.div1 {
+    grid-column: span 5;
+}
+
+.div3 {
+    grid-column: span 4 / span 3;
+    grid-row: span 4;
+    grid-column-start: 2;
+    grid-row-start: 2;
+
+}
+
+/* div3 INSIDE */
+
+.spotifyplaylist {
+    display: flex;
+    justify-content: center;
+    padding: 1%;
+}
+
+.div4 {
+    grid-row: span 4 / span 4;
+    grid-column-start: 1;
+    grid-row-start: 2;
+}
+
+.div5 {
+    grid-row: span 4 / span 4;
+    grid-column-start: 5;
+    grid-row-start: 2;
+}
+        

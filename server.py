@@ -4,11 +4,12 @@ import json
 import random
 from requests import get, post
 from dotenv import load_dotenv
-from flask import Flask, jsonify, render_template
+from flask import Flask, jsonify, render_template, request
+import requests
 
 # Initialize Flask app
 app = Flask(__name__)
-app.secret_key = 'Aerol'
+app.secret_key = os.getenv("Flask_key")
 
 # Load environment variables
 load_dotenv()
@@ -82,19 +83,40 @@ else:
     print("Artist not found")
 
 
-def get_artist_Image(token, artist_id):
-    url = f"https://api.spotify.com/v1/artists/{artist_id}/images?country=US?limit=1"
-    headers = get_auth_header(token)
-    result = get(url, headers=headers)
-    json_result = json.loads(result.content)
-    return json_result["images"][0]["url"]
+@app.route("/get-artist-image", methods=["GET"])
+def get_artist_image():
+    artist_name = request.args.get("artist", "Dystinct")
+    if not artist_name:
+        return jsonify({"error": "No artist name provided"}), 400
+    
+    # Fetch the Spotify access token
+    access_token = get_token()
+    url = f"https://api.spotify.com/v1/search?q={artist_name}&type=artist&limit=1"
+    headers = get_auth_header(access_token)
+    
+    # Make the request to the Spotify API
+    response = requests.get(url, headers=headers)
+    data = response.json()
+    
+    # Check if artist data exists
+    if data.get("artists", {}).get("items"):
+        artist = data["artists"]["items"][0]
+        # Get the artist image URL
+        artist_image = artist["images"][0]["url"] if artist["images"] else None
+        
+        # Pass the image URL and artist name to the template
+        return render_template('get-image.html', image_url=artist_image, artist_name=artist_name)
 
-
+    return jsonify({"error": "Artist not found"}), 404
 
 
 @app.route('/')
 def Home():
     return render_template('index.html')
+
+@app.route('/Home')
+def HomePage():
+    return render_template('Home.html')
 
 if __name__ == "__main__":
     app.run(debug=True)
