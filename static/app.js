@@ -1,94 +1,100 @@
-const cards = document.querySelectorAll('.music-card');
+const cardsContainer = document.querySelector('.music-card-container');
+const iframe = document.getElementById('spotify-player');
+const likeBtn = document.querySelector('.like-btn');
+const dislikeBtn = document.querySelector('.dislike-btn');
+
 let currentCardIndex = 0;
-let isSwiping = false;
 
-const card = cards[currentCardIndex];
+// Function to fetch artist info and create a music card
+async function fetchRandomMusicCard() {
+    try {
+        const response = await fetch('/get_artist_info');
+        const data = await response.json();
 
-// Start dragging
-card.addEventListener('mousedown', (e) => {
-    isSwiping = true;
-    card.classList.add('moving');
-});
-
-// On mouse move, update the card's position
-document.addEventListener('mousemove', (e) => {
-    if (!isSwiping) return;
-
-    const diff = e.clientX - card.getBoundingClientRect().left;
-    card.style.transform = `translateX(${diff}px)`;  // Moves the card
-
-    if (diff > 100) {
-        card.classList.add('right'); // Swipe Right
-    } else if (diff < -100) {
-        card.classList.add('left'); // Swipe Left
-    }
-});
-
-// End dragging and swipe the card
-document.addEventListener('mouseup', () => {
-    if (!isSwiping) return;
-
-    isSwiping = false;
-
-    // If card moved far enough, apply the appropriate action (right or left)
-    if (card.style.transform.includes("translateX(100%)")) {
-        // Right swipe (like the song, add to playlist)
-        card.classList.add('fling-right');
-        addToSpotifyPlaylist();
-    } else if (card.style.transform.includes("translateX(-100%)")) {
-        // Left swipe (dislike the song, don't add to playlist)
-        card.classList.add('fling-left');
-    }
-
-    // Reset card position after fling
-    setTimeout(() => {
-        card.style.transform = 'translateX(0)';
-        card.classList.remove('right', 'left', 'fling-right', 'fling-left');
-        
-        // Move to the next card in the stack
-        currentCardIndex++;
-        if (currentCardIndex >= cards.length) {
-            currentCardIndex = 0;
+        if (data.error) {
+            console.error(data.error);
+            return;
         }
 
-        const nextCard = cards[currentCardIndex];
-        nextCard.style.transform = 'translateX(0)';
-    }, 300);  // Wait for the fling animation to complete
-});
+        const { artist_name, artist_image, track_id, track_name } = data;
 
-// Click event for the Like Button
-document.querySelector('.like-btn').addEventListener('click', () => {
-    card.classList.add('fling-right');
-    addToSpotifyPlaylist();
-    resetCardPosition();
-});
+        // Create and display the new music card
+        const newCard = createMusicCard(artist_name, track_name, track_id, artist_image);
+        cardsContainer.appendChild(newCard);
 
-// Click event for the Dislike Button
-document.querySelector('.dislike-btn').addEventListener('click', () => {
-    card.classList.add('fling-left');
-    resetCardPosition();
-});
-
-// Simulate adding the song to a Spotify playlist
-function addToSpotifyPlaylist() {
-    console.log('Song added to playlist!');
-}
-
-function resetCardPosition() {
-    setTimeout(() => {
-        card.style.transform = 'translateX(0)';
-        card.classList.remove('fling-right', 'fling-left');
-        
-        // Move to the next card in the stack
-        currentCardIndex++;
-        if (currentCardIndex >= cards.length) {
-            currentCardIndex = 0;
+        // Show the first card
+        if (cardsContainer.children.length === 1) {
+            showCard(currentCardIndex);
         }
 
-        const nextCard = cards[currentCardIndex];
-        nextCard.style.transform = 'translateX(0)';
-    }, 300);  // Wait for the fling animation to complete
+    } catch (error) {
+        console.error("Error fetching artist data:", error);
+    }
 }
 
+// Function to create a music card
+function createMusicCard(artistName, trackName, trackId, artistImageUrl) {
+    const card = document.createElement('div');
+    card.classList.add('music-card');
+    card.style.display = 'none'; // Initially hidden
 
+    const cardImage = document.createElement('img');
+    cardImage.src = artistImageUrl;
+    cardImage.alt = `${artistName} - ${trackName}`;
 
+    const cardTitle = document.createElement('h3');
+    cardTitle.textContent = trackName;
+
+    const cardArtist = document.createElement('p');
+    cardArtist.textContent = artistName;
+
+    const playButton = document.createElement('button');
+    playButton.textContent = "Play Song";
+    playButton.addEventListener('click', () => {
+        iframe.src = `https://open.spotify.com/embed/track/${trackId}`;
+        iframe.style.display = "block";
+    });
+
+    card.appendChild(cardImage);
+    card.appendChild(cardTitle);
+    card.appendChild(cardArtist);
+    card.appendChild(playButton);
+
+    return card;
+}
+
+// Function to show a specific card
+function showCard(index) {
+    const cards = document.querySelectorAll('.music-card');
+    if (cards.length === 0) return;
+
+    // Hide all cards
+    cards.forEach(card => card.style.display = 'none');
+
+    // Show the current card
+    cards[index].style.display = 'block';
+}
+
+// Function to handle like/dislike actions
+function handleAction(direction) {
+    const cards = document.querySelectorAll('.music-card');
+    if (cards.length === 0) return;
+
+    // Apply swipe animation
+    cards[currentCardIndex].classList.add(direction);
+    setTimeout(() => {
+        cards[currentCardIndex].remove();
+        currentCardIndex = 0; // Reset to the first card
+        showCard(currentCardIndex);
+
+        // Fetch a new card after swiping
+        fetchRandomMusicCard();
+    }, 300);
+}
+
+// Event listeners for like/dislike buttons
+likeBtn.addEventListener('click', () => handleAction('right'));
+dislikeBtn.addEventListener('click', () => handleAction('left'));
+
+// Initial fetch and load cards
+fetchRandomMusicCard();

@@ -5,23 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Swipe Music Cards</title>
     <link rel="stylesheet" href="/static/style.css">
-    
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-    <!-- Top Menu Bar -->
+    <!-- Navigation Menu -->
     <header>
         <nav class="navbar">
             <ul>
-                <li><a href="/Home">Home</a></li>
+                <li><a href="/">Home</a></li>
                 <li><a href="#">Playlist</a></li>
                 <li><a href="#">About</a></li>
             </ul>
         </nav>
     </header>
 
-
-    <iframe style="border-radius:12px" src="https://open.spotify.com/embed/playlist/0OIvJMRHhbbLxHW8nEkVZk?utm_source=generator" width="80%" height="560" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
-    <!-- Like/Dislike Buttons outside the cards -->
+    <!-- Spotify Player (Initially Hidden) -->
+    <iframe style="border-radius:14px" src="https://open.spotify.com/embed/playlist/0OIvJMRHhbbLxHW8nEkVZk?utm_source=generator" width="80%" height="560" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" ></iframe>
+    <!-- Like/Dislike Buttons -->
     <div class="buttons-container">
         <button class="dislike-btn">👎</button>
         <button class="like-btn">👍</button>

@@ -2,10 +2,13 @@ import os
 import base64
 import json
 import random
+import requests
 from requests import get, post
 from dotenv import load_dotenv
 from flask import Flask, jsonify, render_template, request
 import requests
+
+
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -47,27 +50,122 @@ def get_auth_header(token):
 
 #FUNCTION TO SEARCH FOR AN ARTIST
 
+# def search_artist(token, artist_name):
+#     url = "https://api.spotify.com/v1/search"
+#     headers = get_auth_header(token)
+#     query = f"?q={artist_name}&type=artist&limit=1"
+
+#     query_url = url + query
+#     result = get(query_url, headers=headers)
+#     json_result = json.loads(result.content)["artists"]["items"]   
+
+#     if len(json_result) == 0:
+#         print("No artist found")
+#         return None
+    
+#     return json_result[0]
+
+# def get_songs_by_artist(token, artist_id):
+#     url = f"https://api.spotify.com/v1/artists/{artist_id}/top-tracks?country=US"
+#     headers = get_auth_header(token)
+#     result = get(url, headers=headers)
+#     json_result = json.loads(result.content)["tracks"]
+
+#     return json_result
+
+# token = get_token()
+# result = search_artist(token, "Kendrick Lamar")
+# artist_id = result["id"]
+# songs = get_songs_by_artist(token, artist_id)
+    
+# # To get the list of the artist's songs
+
+# for idx, songs in enumerate(songs):
+#     print(f"{idx + 1}. {songs['name']}")
+# else:
+#     print("Artist not found")
+
+
+# def get_artist_Image(token, artist_id):
+#     url = f"https://api.spotify.com/v1/artists/{artist_id}/images?country=US?limit=1"
+#     headers = get_auth_header(token)
+#     result = get(url, headers=headers)
+#     json_result = json.loads(result.content)
+#     return json_result["images"][0]["url"]
+
+
+def get_popular_artists(token):
+    # Fetch a list of popular artists from Spotify (e.g., from a playlist or chart)
+    url = "https://api.spotify.com/v1/playlists/37i9dQZEVXbMDoHDwVN2tF"  # Spotify's "Top 50 Global" playlist
+    headers = get_auth_header(token)
+    response = requests.get(url, headers=headers)
+    data = response.json()
+
+    if "tracks" not in data:
+        return []
+
+    # Extract unique artist names from the playlist
+    artists = set()
+    for track in data["tracks"]["items"]:
+        for artist in track["track"]["artists"]:
+            artists.add(artist["name"])
+    return list(artists)
+
+@app.route('/get_artist_info')
+def get_artist_info():
+    token = get_token()
+
+    # Fetch a list of popular artists
+    artists = get_popular_artists(token)
+    if not artists:
+        return jsonify({"error": "No artists found"}), 404
+
+    # Select a random artist from the list
+    artist_name = random.choice(artists)
+    artist = search_artist(token, artist_name)
+
+    if not artist:
+        return jsonify({"error": "Artist not found"}), 404
+
+    artist_id = artist["id"]
+    artist_image = artist["images"][0]["url"] if artist["images"] else None
+
+    # Get the top track of the artist
+    top_track = get_top_track(token, artist_id)
+    if not top_track:
+        return jsonify({"error": "No tracks found"}), 404
+
+    track_id = top_track["id"]
+    track_name = top_track["name"]
+
+    return jsonify({
+        "artist_name": artist_name,
+        "artist_image": artist_image,
+        "track_id": track_id,
+        "track_name": track_name
+    })
+
 def search_artist(token, artist_name):
     url = "https://api.spotify.com/v1/search"
     headers = get_auth_header(token)
     query = f"?q={artist_name}&type=artist&limit=1"
-
     query_url = url + query
     result = get(query_url, headers=headers)
-    json_result = json.loads(result.content)["artists"]["items"]   
+    json_result = json.loads(result.content)["artists"]["items"]
+    return json_result[0] if json_result else None
 
-    if len(json_result) == 0:
-        print("No artist found")
-        return None
-    
-    return json_result[0]
+def get_top_track(token, artist_id):
+    url = f"https://api.spotify.com/v1/artists/{artist_id}/top-tracks?country=US"
+    headers = get_auth_header(token)
+    result = get(url, headers=headers)
+    json_result = json.loads(result.content)["tracks"]
+    return json_result
 
 def get_songs_by_artist(token, artist_id):
     url = f"https://api.spotify.com/v1/artists/{artist_id}/top-tracks?country=US"
     headers = get_auth_header(token)
     result = get(url, headers=headers)
     json_result = json.loads(result.content)["tracks"]
-
     return json_result
 
 token = get_token()
@@ -83,11 +181,9 @@ else:
     print("Artist not found")
 
 
-@app.route("/get-artist-image", methods=["GET"])
-def get_artist_image():
-    artist_name = request.args.get("artist", "Dystinct")
+def fetch_artist_image(artist_name):
     if not artist_name:
-        return jsonify({"error": "No artist name provided"}), 400
+        return None, "No artist name provided"
     
     # Fetch the Spotify access token
     access_token = get_token()
@@ -96,6 +192,9 @@ def get_artist_image():
     
     # Make the request to the Spotify API
     response = requests.get(url, headers=headers)
+    if response.status_code != 200:
+        return None, "Failed to fetch artist data"
+    
     data = response.json()
     
     # Check if artist data exists
@@ -103,20 +202,27 @@ def get_artist_image():
         artist = data["artists"]["items"][0]
         # Get the artist image URL
         artist_image = artist["images"][0]["url"] if artist["images"] else None
-        
-        # Pass the image URL and artist name to the template
-        return render_template('get-image.html', image_url=artist_image, artist_name=artist_name)
+        return artist_image, None
 
-    return jsonify({"error": "Artist not found"}), 404
-
+    return None, "Artist not found"
 
 @app.route('/')
 def Home():
     return render_template('index.html')
 
+
 @app.route('/Home')
 def HomePage():
-    return render_template('Home.html')
+    artist_name = request.args.get("artist", "Kendrick Lamar")
+    artist_image, error = fetch_artist_image(artist_name)
+
+    if error:
+        return render_template("Home.html", error=error)
+    
+    return render_template("Home.html", image_url=artist_image, artist_name=artist_name)
+
+
+
 
 if __name__ == "__main__":
     app.run(debug=True)
